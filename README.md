@@ -8,6 +8,8 @@ A premium, responsive dark-mode dashboard built with Python Flask and custom van
 
 * **Granular Deconstruction**: Monolithic daily feed notes are dynamically parsed and separated into individual update cards by category (e.g. `Feature`, `Announcement`, `Issue`, `Deprecation`).
 * **Instant Category Filters & Full-Text Search**: Filter notes using category tabs or search keywords instantly on the client side.
+* **Copy to Clipboard**: A quick copy button on each card copies the formatted update (Type, Date, Description, and Link) directly to your clipboard, featuring a visual state transition confirmation ("Copied!").
+* **Export to CSV**: An export button in the filter bar generates a clean spreadsheet-ready CSV file of the currently filtered/searched list, correctly handling escaping and downloads in the browser.
 * **Granular Tweeting**:
   * **Single Tweet**: Click any update's tweet icon to launch a pre-populated composer containing the update date, tag, shortened text description, and direct link.
   * **Compiled Selection**: Toggle checkmarks on multiple update cards to compile a bulleted summary tweet in a bottom dashboard drawer.

@@ -20,12 +20,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const composerTextarea = document.getElementById('composer-textarea');
   const charCount = document.getElementById('char-count');
   const btnSendTweet = document.getElementById('btn-send-tweet');
+  const exportCsvBtn = document.getElementById('export-csv-btn');
 
   // Load Initial Data
   fetchReleaseNotes();
 
   // Event Listeners
   refreshBtn.addEventListener('click', fetchReleaseNotes);
+  if (exportCsvBtn) {
+    exportCsvBtn.addEventListener('click', exportToCSV);
+  }
   
   searchInput.addEventListener('input', (e) => {
     searchQuery = e.target.value.trim().toLowerCase();
@@ -178,6 +182,13 @@ document.addEventListener('DOMContentLoaded', () => {
           ${note.html}
         </div>
         <div class="card-actions">
+          <button class="btn-copy-inline" data-id="${note.id}">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+            </svg>
+            Copy Update
+          </button>
           <button class="btn-tweet-inline" data-id="${note.id}">
             <svg viewBox="0 0 24 24">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
@@ -189,10 +200,33 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Card selection toggle event (excluding clicks on links and buttons)
       card.addEventListener('click', (e) => {
-        if (e.target.closest('a') || e.target.closest('.btn-tweet-inline')) {
-          return; // Allow links and tweet button to work normally
+        if (e.target.closest('a') || e.target.closest('.btn-tweet-inline') || e.target.closest('.btn-copy-inline')) {
+          return; // Allow links, tweet, and copy button to work normally
         }
         toggleSelection(note);
+      });
+      
+      // Inline Copy Button Event
+      const inlineCopyBtn = card.querySelector('.btn-copy-inline');
+      inlineCopyBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Stop card click handler
+        const copyText = `BigQuery ${note.type} (${note.date}):\n${note.text}\n\nLink: ${note.link}`;
+        navigator.clipboard.writeText(copyText).then(() => {
+          inlineCopyBtn.classList.add('copied');
+          const originalHTML = inlineCopyBtn.innerHTML;
+          inlineCopyBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Copied!
+          `;
+          setTimeout(() => {
+            inlineCopyBtn.classList.remove('copied');
+            inlineCopyBtn.innerHTML = originalHTML;
+          }, 2000);
+        }).catch(err => {
+          console.error('Failed to copy: ', err);
+        });
       });
       
       // Inline Tweet Button Event
@@ -348,5 +382,66 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       btnSendTweet.disabled = false;
     }
+  }
+
+  function exportToCSV() {
+    // Export currently matching/filtered notes
+    let filtered = allNotes.filter(note => {
+      if (activeFilter !== 'all') {
+        const typeNormalized = note.type.toLowerCase();
+        if (activeFilter === 'feature' && typeNormalized !== 'feature') return false;
+        if (activeFilter === 'announcement' && typeNormalized !== 'announcement') return false;
+        if (activeFilter === 'issue' && (typeNormalized !== 'issue' && typeNormalized !== 'deprecation')) return false;
+      }
+      
+      if (searchQuery) {
+        const contentMatch = note.text.toLowerCase().includes(searchQuery);
+        const typeMatch = note.type.toLowerCase().includes(searchQuery);
+        const dateMatch = note.date.toLowerCase().includes(searchQuery);
+        return contentMatch || typeMatch || dateMatch;
+      }
+      
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      alert('No updates to export in the current selection.');
+      return;
+    }
+
+    const headers = ['Date', 'Type', 'Link', 'Description'];
+    const escapeCsv = (str) => {
+      if (str === null || str === undefined) return '';
+      return `"${str.toString().replace(/"/g, '""')}"`;
+    };
+
+    const csvRows = [];
+    csvRows.push(headers.map(escapeCsv).join(','));
+
+    filtered.forEach(note => {
+      const row = [
+        note.date,
+        note.type,
+        note.link,
+        note.text
+      ];
+      csvRows.push(row.map(escapeCsv).join(','));
+    });
+
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    const dateStr = new Date().toISOString().split('T')[0];
+    const categorySuffix = activeFilter !== 'all' ? `_${activeFilter}` : '';
+    const filename = `bigquery_release_notes${categorySuffix}_${dateStr}.csv`;
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 });
