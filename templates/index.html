@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="View and tweet the latest BigQuery Release Notes in a gorgeous, modern dashboard. Features category filtering, full-text search, and Twitter integrations.">
+  <meta name="author" content="BigQuery Release Pulse">
+  <title>BigQuery Release Pulse</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="logo-section">
+        <h1>BigQuery Release Pulse</h1>
+        <p>Stay updated with the latest Google Cloud BigQuery developments</p>
+      </div>
+      <button class="btn-refresh" id="refresh-btn" aria-label="Refresh release notes">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+        Refresh Notes
+      </button>
+    </header>
+
+    <!-- Controls (Search + Filters) -->
+    <div class="control-bar">
+      <div class="search-wrapper">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" class="search-input" id="search-input" placeholder="Search by feature, keyword, or date..." aria-label="Search release notes">
+      </div>
+      <div class="filters">
+        <button class="filter-btn active" data-filter="all" id="filter-all">All Updates</button>
+        <button class="filter-btn" data-filter="feature" id="filter-features">Features</button>
+        <button class="filter-btn" data-filter="announcement" id="filter-announcements">Announcements</button>
+        <button class="filter-btn" data-filter="issue" id="filter-issues">Issues & Deprecations</button>
+      </div>
+    </div>
+
+    <!-- Feed Info Row -->
+    <div class="feed-info">
+      <div id="notes-count">Click cards to select updates to tweet them together</div>
+      <div>Source: Google Cloud Feeds</div>
+    </div>
+
+    <!-- Release Notes Container -->
+    <main class="notes-list" id="notes-container" aria-live="polite">
+      <!-- Loading Skeleton (Default) -->
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Fetching latest BigQuery release notes...</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- Bottom Floating Selection Bar -->
+  <div class="floating-action-bar" id="floating-bar">
+    <div class="selection-info">
+      <span class="selection-count" id="selection-count">0 Updates Selected</span>
+      <span class="selection-subtext">Selected updates will be formatted into a single compiled tweet</span>
+    </div>
+    <div class="floating-actions">
+      <button class="btn-clear" id="btn-clear">Clear</button>
+      <button class="btn-tweet-main" id="btn-tweet-selected">
+        <svg viewBox="0 0 24 24">
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+        </svg>
+        Tweet Selected
+      </button>
+    </div>
+  </div>
+
+  <!-- Tweet Composer Modal Dialog -->
+  <div class="tweet-modal" id="tweet-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title">
+          <svg viewBox="0 0 24 24">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+          Tweet Composer
+        </h3>
+        <button class="btn-close-modal" id="close-modal" aria-label="Close composer">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <textarea class="composer-textarea" id="composer-textarea" placeholder="What's happening?" maxlength="1000"></textarea>
+      </div>
+      <div class="composer-footer">
+        <div class="char-counter" id="char-count">0 / 280</div>
+        <button class="btn-send-tweet" id="btn-send-tweet">Post Tweet</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
